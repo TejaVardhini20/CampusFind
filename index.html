@@ -1,0 +1,136 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampusFind | Lost & Found</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6fb;color:#17243a}
+header{background:#203b70;color:white;padding:25px 7%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+header h1{margin:0;font-size:27px}
+header p{margin:7px 0 0;color:#dbe6ff}
+main{max-width:1100px;margin:30px auto;padding:0 18px}
+.stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px}
+.stat{background:white;padding:18px;border-radius:12px;flex:1;min-width:120px;box-shadow:0 3px 14px #152b5010}
+.stat strong{font-size:25px;display:block;color:#284c91;margin-bottom:5px}
+.layout{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.panel{background:white;padding:22px;border-radius:14px;box-shadow:0 3px 14px #152b5010}
+h2{margin-top:0;font-size:20px}
+label{display:block;margin:13px 0 6px;font-size:14px;font-weight:bold}
+input,select,textarea{width:100%;padding:11px;border:1px solid #d4dbea;border-radius:8px;font:inherit}
+textarea{resize:vertical;min-height:70px}
+button{border:0;border-radius:8px;padding:11px 14px;background:#315db4;color:white;font-weight:bold;cursor:pointer}
+button:hover{opacity:.88}
+form button{width:100%;margin-top:16px}
+.tools{display:flex;gap:9px;margin-bottom:15px;flex-wrap:wrap}
+.tools input{flex:1;min-width:150px}
+.tools select{width:auto;min-width:120px}
+.items{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:13px}
+.item{border:1px solid #e3e9f2;border-radius:11px;padding:15px}
+.item h3{margin:10px 0}
+.tag{display:inline-block;background:#e9efff;color:#284c91;padding:5px 9px;border-radius:20px;font-size:12px;font-weight:bold}
+.item p{font-size:14px;color:#58677e;overflow-wrap:anywhere}
+.item button{margin:5px 5px 0 0;font-size:12px}
+.delete{background:#e9edf4;color:#25344d}
+.empty{color:#758198;text-align:center;padding:30px}
+footer{text-align:center;padding:25px;color:#6b7890;font-size:13px}
+@media(max-width:750px){.layout{grid-template-columns:1fr}header{padding:22px}main{margin-top:20px}}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>🎓 CampusFind</h1><p>Lost something? Let's find it together.</p></div>
+  <strong>Campus Lost & Found Portal</strong>
+</header>
+<main>
+  <div class="stats">
+    <div class="stat"><strong id="total">0</strong>Total Reports</div>
+    <div class="stat"><strong id="lostCount">0</strong>Lost Items</div>
+    <div class="stat"><strong id="foundCount">0</strong>Found Items</div>
+    <div class="stat"><strong id="returnedCount">0</strong>Returned</div>
+  </div>
+  <div class="layout">
+    <section class="panel">
+      <h2>📝 Report an Item</h2>
+      <form id="reportForm">
+        <label for="itemName">Item Name *</label>
+        <input id="itemName" placeholder="e.g. Blue water bottle" required>
+        <label for="kind">Report Type *</label>
+        <select id="kind"><option>Lost</option><option>Found</option></select>
+        <label for="category">Category</label>
+        <select id="category">
+          <option>Electronics</option><option>Books & Notes</option>
+          <option>Water Bottles</option><option>ID Cards</option>
+          <option>Bags</option><option>Other</option>
+        </select>
+        <label for="location">Campus Location *</label>
+        <input id="location" placeholder="e.g. Library" required>
+        <label for="date">Date</label>
+        <input id="date" type="date">
+        <label for="details">Description</label>
+        <textarea id="details" placeholder="Colour, identifying details..."></textarea>
+        <button type="submit">+ Submit Report</button>
+      </form>
+    </section>
+    <section class="panel">
+      <h2>🔎 Browse Reports</h2>
+      <div class="tools">
+        <input id="search" placeholder="Search name or location...">
+        <select id="filter">
+          <option>All</option><option>Lost</option>
+          <option>Found</option><option>Returned</option>
+        </select>
+      </div>
+      <div id="items" class="items"></div>
+    </section>
+  </div>
+</main>
+<footer>CampusFind © 2026 · Helping campus items find their way home 💙</footer>
+<script>
+const KEY="campusfind-reports-v1";
+let reports=JSON.parse(localStorage.getItem(KEY)||"[]");
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem(KEY,JSON.stringify(reports));render()}
+function safe(value){return String(value).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function render(){
+ $("total").textContent=reports.length;
+ $("lostCount").textContent=reports.filter(x=>x.status==="Lost").length;
+ $("foundCount").textContent=reports.filter(x=>x.status==="Found").length;
+ $("returnedCount").textContent=reports.filter(x=>x.status==="Returned").length;
+ const q=$("search").value.toLowerCase();
+ const f=$("filter").value;
+ const list=reports.filter(x=>(f==="All"||x.status===f)&&
+ (x.name+" "+x.location+" "+x.category+" "+x.details).toLowerCase().includes(q));
+ $("items").innerHTML=list.length?list.map(x=>`
+ <article class="item">
+ <span class="tag">${safe(x.status)}</span>
+ <h3>${safe(x.name)}</h3>
+ <p>📍 ${safe(x.location)}<br>🏷️ ${safe(x.category)}<br>📅 ${safe(x.date||"Date not provided")}</p>
+ <p>${safe(x.details||"No additional description.")}</p>
+ ${x.status!=="Returned"?`<button onclick="markReturned('${x.id}')">Mark Returned</button>`:""}
+ <button class="delete" onclick="removeReport('${x.id}')">Delete</button>
+ </article>`).join(""):'<div class="empty">No reports found. Add the first report!</div>';
+}
+$("reportForm").addEventListener("submit",e=>{
+ e.preventDefault();
+ reports.unshift({id:Date.now().toString(),name:$("itemName").value.trim(),
+ status:$("kind").value,category:$("category").value,
+ location:$("location").value.trim(),date:$("date").value,
+ details:$("details").value.trim()});
+ save();e.target.reset();
+});
+$("search").addEventListener("input",render);
+$("filter").addEventListener("change",render);
+function markReturned(id){
+ const item=reports.find(x=>x.id===id);
+ if(item){item.status="Returned";save()}
+}
+function removeReport(id){
+ if(confirm("Delete this report?")){reports=reports.filter(x=>x.id!==id);save()}
+}
+render();
+</script>
+</body>
+</html>
